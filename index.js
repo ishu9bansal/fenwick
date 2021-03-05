@@ -15,7 +15,9 @@ var layer;
 
 function set(i,x){
 	if(i>limit||i<=0)	return;
+	arr = [];
 	while(i<=limit){
+		arr.push(i.toString());
 		var temp = mapping.find(d => d.id == i);
 		var p = i + (i&-i);
 		if(!temp)	mapping.push(temp = {
@@ -26,10 +28,11 @@ function set(i,x){
 		temp.value += x;
 		i = p;			
 	}
-	onMappingChange();
+	var trans_period = transitionAnimation();
+	setTimeout(() => highlight(arr), trans_period);
 }
 
-function onMappingChange(){
+function transitionAnimation(){
 	// get hierarchy from data
 	root = d3.stratify()(mapping);
 	// sort hierarchy by index
@@ -64,11 +67,7 @@ function onMappingChange(){
 	.attr('width', 0).attr('height', 0)
 	.transition().duration(period)
 	.attr('x', -boxWidth/2).attr('y', -boxHeight/2)
-	.attr('width', boxWidth).attr('height', boxHeight)
-	.transition().duration(quick)
-	.style('fill', 'black')
-	.transition().duration(quick)
-	.style('fill', 'aqua');
+	.attr('width', boxWidth).attr('height', boxHeight);
 
 	// text added to group
 	enter_group.append('text').classed('node', true)
@@ -79,28 +78,47 @@ function onMappingChange(){
 	.style('opacity', 0)
 	.text(d => d.id + '->' + d.data.value)
 	.transition().duration(period)
-	.style('opacity', 1)
-	.transition().duration(quick)
-	.style('fill', 'white');
+	.style('opacity', 1);
 
 	// group and lines transition
 	layer[1].selectAll('g.node')
 	.transition().duration(period)
 	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
-	setTimeout(function(){
-		layer[1].selectAll('text.node')
-		.text(d => d.id + '->' + d.data.value)
-		.transition().duration(quick)
-		.style('fill', 'black');
-	}, period+quick)
+	layer[1].selectAll('text.node')
+	.text(d => d.id + '->' + d.data.value);
 	layer[0].selectAll('line.link')
 	.transition().duration(period)
 	.attr('x1', d => d.source.x + boxWidth)
 	.attr('y1', d => d.source.y + boxHeight)
 	.attr('x2', d => d.target.x + boxWidth)
-	.attr('y2', d => d.target.y + boxHeight)
+	.attr('y2', d => d.target.y + boxHeight);
+
+	// return the time to animate
+	return enter_group.empty()?0:period;
+}
+
+function highlight(arr){
+	// TODO: add travelling highlight
+	layer[1].selectAll('text.node')
+	.filter(d => arr.includes(d.id))
 	.transition().duration(quick)
-	.style('stroke', 'black');
+	.style('fill', 'white')
+	.transition().duration(quick)
+	.style('fill', 'black');
+
+	layer[1].selectAll('rect.node')
+	.filter(d => arr.includes(d.id))
+	.transition().duration(quick)
+	.style('fill', 'black')
+	.transition().duration(quick)
+	.style('fill', 'aqua');
+
+	layer[0].selectAll('line.link')
+	.filter(d => arr.includes(d.target.id))
+	.transition().duration(quick)
+	.style('stroke', 'cyan')
+	.transition().duration(quick)
+	.style('stroke', 'black')
 }
 
 function randomAdd(){

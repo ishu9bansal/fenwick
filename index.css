@@ -1,4 +1,7 @@
-
 line.link{
 	stroke-width: 1;
+}
+
+text{
+	font-family: monospace;
 }
