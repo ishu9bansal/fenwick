@@ -3,12 +3,14 @@ const treeHeight = 5;
 const boxHeight = 20;
 const boxWidth = 50;
 const period = 5000;
+const layers = 2;
 var limit;
 var mapping;
 var svg;
 var root;
 var width;
 var height;
+var layer;
 
 function set(i,x){
 	if(i>limit||i<=0)	return;
@@ -38,7 +40,7 @@ function onMappingChange(){
 	d3.tree().size([w,h])(root);
 
 	// lines enter here
-	svg.selectAll('line.link')
+	layer[0].selectAll('line.link')
 	.data(root.links(), d => d.target.id)
 	.enter().append('line')
 	.classed('link', true)
@@ -49,7 +51,7 @@ function onMappingChange(){
 	.style('stroke', 'black');
 
 	// group enter here
-	enter_group = svg.selectAll('g.node')
+	enter_group = layer[1].selectAll('g.node')
 	.data(root.descendants(), d => d.id)
 	.enter().append('g').classed('node', true)
 	.attr('transform', 'translate('+(root.x+boxWidth)+','+(root.y+boxHeight)+')');
@@ -57,7 +59,6 @@ function onMappingChange(){
 	// rect added to group
 	enter_group.append('rect').classed('node', true)
 	.attr('x', -boxWidth/2).attr('y', -boxHeight/2)
-	// .attr('dx', 50).attr('dy', 50)
 	.attr('width', boxWidth).attr('height', boxHeight)
 	.style('fill', 'aqua');
 
@@ -68,13 +69,13 @@ function onMappingChange(){
 	.attr('dx', 0).attr('dy', 0);
 
 	// group and lines transition
-	svg.selectAll('g.node')
+	layer[1].selectAll('g.node')
 	.transition().duration(period)
 	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
-	svg.selectAll('text.node')
+	layer[1].selectAll('text.node')
 	.transition().duration(period)
 	.text(d => d.id + '->' + d.data.value);
-	svg.selectAll('line.link')
+	layer[0].selectAll('line.link')
 	.transition().duration(period)
 	.attr('x1', d => d.source.x + boxWidth)
 	.attr('y1', d => d.source.y + boxHeight)
@@ -90,6 +91,10 @@ function init(){
 	svg = d3.select("svg").attr("width", width).attr("height", height)
 	.attr("x", offset).attr("y", offset);
 
+	layer = [];
+	for(var i = 0; i < layers; i++){
+		layer.push(svg.append('g'));
+	}
 	mapping = [];
 }
 
