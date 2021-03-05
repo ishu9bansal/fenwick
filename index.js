@@ -3,7 +3,7 @@ const treeHeight = 5;
 const boxHeight = 20;
 const boxWidth = 50;
 const period = 1000;
-const quick = 500;
+const quick = 200;
 const layers = 2;
 var limit;
 var mapping;
@@ -45,43 +45,57 @@ function onMappingChange(){
 	.data(root.links(), d => d.target.id)
 	.enter().append('line')
 	.classed('link', true)
-	.attr('x1', root.x + boxWidth)
-	.attr('y1', root.y + boxHeight)
-	.attr('x2', root.x + boxWidth)
-	.attr('y2', root.y + boxHeight)
-	.style('stroke', 'black');
+	.attr('x1', d => d.target.x + boxWidth)
+	.attr('y1', d => d.target.y + boxHeight)
+	.attr('x2', d => d.target.x + boxWidth)
+	.attr('y2', d => d.target.y + boxHeight)
+	.style('stroke', 'cyan');
 
 	// group enter here
 	enter_group = layer[1].selectAll('g.node')
 	.data(root.descendants(), d => d.id)
 	.enter().append('g').classed('node', true)
-	.attr('transform', 'translate('+(root.x+boxWidth)+','+(root.y+boxHeight)+')');
+	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
 
 	// rect added to group
 	enter_group.append('rect').classed('node', true)
+	.style('fill', 'aqua')
+	.attr('x', 0).attr('y', 0)
+	.attr('width', 0).attr('height', 0)
+	.transition().duration(period)
 	.attr('x', -boxWidth/2).attr('y', -boxHeight/2)
 	.attr('width', boxWidth).attr('height', boxHeight)
+	.transition().duration(quick)
+	.style('fill', 'black')
+	.transition().duration(quick)
 	.style('fill', 'aqua');
 
 	// text added to group
 	enter_group.append('text').classed('node', true)
 	.attr("dominant-baseline", "middle")
 	.attr("text-anchor", "middle")
-	.attr('dx', 0).attr('dy', 0);
+	.attr('dx', 0).attr('dy', 0)
+	.style('fill', 'white')
+	.style('opacity', 0)
+	.text(d => d.id + '->' + d.data.value)
+	.transition().duration(period+quick)
+	.style('opacity', 1);
 
 	// group and lines transition
 	layer[1].selectAll('g.node')
 	.transition().duration(period)
 	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
 	layer[1].selectAll('text.node')
-	.transition().duration(period)
-	.text(d => d.id + '->' + d.data.value);
+	.transition().delay(period+quick).duration(quick)
+	.style('fill', 'black');
 	layer[0].selectAll('line.link')
 	.transition().duration(period)
 	.attr('x1', d => d.source.x + boxWidth)
 	.attr('y1', d => d.source.y + boxHeight)
 	.attr('x2', d => d.target.x + boxWidth)
-	.attr('y2', d => d.target.y + boxHeight);
+	.attr('y2', d => d.target.y + boxHeight)
+	.transition().duration(quick)
+	.style('stroke', 'black');
 }
 
 function randomAdd(){
