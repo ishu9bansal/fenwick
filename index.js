@@ -75,19 +75,24 @@ function onMappingChange(){
 	.attr("dominant-baseline", "middle")
 	.attr("text-anchor", "middle")
 	.attr('dx', 0).attr('dy', 0)
-	.style('fill', 'white')
+	.style('fill', 'black')
 	.style('opacity', 0)
 	.text(d => d.id + '->' + d.data.value)
-	.transition().duration(period+quick)
-	.style('opacity', 1);
+	.transition().duration(period)
+	.style('opacity', 1)
+	.transition().duration(quick)
+	.style('fill', 'white');
 
 	// group and lines transition
 	layer[1].selectAll('g.node')
 	.transition().duration(period)
 	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
-	layer[1].selectAll('text.node')
-	.transition().delay(period+quick).duration(quick)
-	.style('fill', 'black');
+	setTimeout(function(){
+		layer[1].selectAll('text.node')
+		.text(d => d.id + '->' + d.data.value)
+		.transition().duration(quick)
+		.style('fill', 'black');
+	}, period+quick)
 	layer[0].selectAll('line.link')
 	.transition().duration(period)
 	.attr('x1', d => d.source.x + boxWidth)
