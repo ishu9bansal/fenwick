@@ -2,7 +2,8 @@ const offset = 10;
 const treeHeight = 5;
 const boxHeight = 20;
 const boxWidth = 50;
-const period = 5000;
+const period = 1000;
+const quick = 500;
 const layers = 2;
 var limit;
 var mapping;
@@ -83,6 +84,12 @@ function onMappingChange(){
 	.attr('y2', d => d.target.y + boxHeight);
 }
 
+function randomAdd(){
+	i = 1 + Math.floor(32*Math.random());
+	x = -32 + Math.floor(64*Math.random());
+	set(i,x);
+}
+
 function init(){
 	limit = 1<<treeHeight;
 	width = window.innerWidth - 2*offset;
@@ -90,6 +97,10 @@ function init(){
 
 	svg = d3.select("svg").attr("width", width).attr("height", height)
 	.attr("x", offset).attr("y", offset);
+	svg.append('rect').attr("width", 100).attr("height", 100)
+	.attr("x", offset).attr("y", offset)
+	.style('fill', 'lightcyan')
+	.on('click', randomAdd);
 
 	layer = [];
 	for(var i = 0; i < layers; i++){
