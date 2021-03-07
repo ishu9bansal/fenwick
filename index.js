@@ -4,7 +4,12 @@ const boxHeight = 20;
 const boxWidth = 50;
 const period = 1000;
 const quick = 200;
-const layers = 3;
+const layers = [
+	'lines',
+	'nodes',
+	'chart',
+	'controller'
+];
 const chartHeight = 300;
 const chartWidth = 400;
 const controlHeight = 70;
@@ -129,7 +134,7 @@ function transitionAnimation(){
 	d3.tree().size([w,h])(root);
 
 	// lines enter here
-	layer[0].selectAll('line.link')
+	layer['lines'].selectAll('line.link')
 	.data(root.links(), d => d.target.id)
 	.enter().append('line')
 	.classed('link', true)
@@ -140,7 +145,7 @@ function transitionAnimation(){
 	.style('stroke', 'cyan');
 
 	// group enter here
-	enter_group = layer[1].selectAll('g.node')
+	enter_group = layer['nodes'].selectAll('g.node')
 	.data(root.descendants(), d => d.id)
 	.enter().append('g').classed('node', true)
 	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
@@ -166,12 +171,12 @@ function transitionAnimation(){
 	.style('opacity', 1);	// change it to 0 to hide texts
 
 	// group and lines transition
-	layer[1].selectAll('g.node')
+	layer['nodes'].selectAll('g.node')
 	.transition().duration(period)
 	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
-	layer[1].selectAll('text.node')
+	layer['nodes'].selectAll('text.node')
 	.text(d => d.id + '->' + d.data.value);
-	layer[0].selectAll('line.link')
+	layer['lines'].selectAll('line.link')
 	.transition().duration(period)
 	.attr('x1', d => d.source.x + boxWidth)
 	.attr('y1', d => d.source.y + boxHeight)
@@ -184,21 +189,21 @@ function transitionAnimation(){
 
 function highlight(arr){
 	// TODO: add travelling highlight
-	layer[1].selectAll('text.node')
+	layer['nodes'].selectAll('text.node')
 	.filter(d => arr.includes(d.id))
 	.transition().duration(quick)
 	.style('fill', 'white')
 	.transition().duration(quick)
 	.style('fill', 'black');
 
-	layer[1].selectAll('rect.node')
+	layer['nodes'].selectAll('rect.node')
 	.filter(d => arr.includes(d.id))
 	.transition().duration(quick)
 	.style('fill', 'black')
 	.transition().duration(quick)
 	.style('fill', 'aqua');
 
-	layer[0].selectAll('line.link')
+	layer['lines'].selectAll('line.link')
 	.filter(d => arr.includes(d.target.id))
 	.transition().duration(quick)
 	.style('stroke', 'cyan')
@@ -221,6 +226,7 @@ function handleMouseDown(d,i){
 }
 
 function handleMouseUp(d,i){
+	// TODO: improve animation
 	d3.select(this)
     .transition().ease(d3.easeElastic)
     .style("opacity", 1);
@@ -285,24 +291,70 @@ function triangleHelper(pa,pb,pc){
 }
 
 function init(){
+	// initial size of the chart preview
 	resizeFactor = 0.5;
+	// calculate limit based on the tree height const
 	limit = 1<<treeHeight;
+
+	// set height and width of the svg element
 	width = window.innerWidth - 2*offset;
 	height = window.innerHeight - 2*offset;
 
 	svg = d3.select("svg").attr("width", width).attr("height", height)
 	.attr("x", offset).attr("y", offset);
 
-	layer = [];
-	for(var i = 0; i < layers; i++){
-		layer.push(svg.append('g'));
+	// add layers to the svg
+	layer = {};
+	for(var i of layers){
+		layer[i] = svg.append('g');
 	}
 
-	barWidth = chartWidth/(limit+2);
-	controller = layer[2].append('g').classed('control', true)
+	// set local coordinate of controller layer
+	controller = layer['controller'].append('g').classed('control', true)
 	.attr('transform', 'translate('+(offset+controlHeight+controlGap+controlRadius)+','+(offset+controlHeight+controlGap+controlRadius)+')')
 	.style('opacity', controlOpacity);
-	chart = layer[2].append('g').classed('chart', true)
+
+	// TODO: fix button click on text
+
+	// add center cirle to controller
+	controller.append('circle')
+	.attr("cx", 0).attr("cy", 0)
+	.attr("r", controlRadius)
+	.style('fill', 'grey')
+	.on('click', () => changeCurrentNode());
+
+	// add controller buttons from button config const
+	controller.selectAll('polygon.controller').data(controllerButtons)
+	.enter().append('polygon').classed('controller', true)
+	.attr('name', d => d.name).style('fill', d => d.color)
+	.attr('points', d => triangleHelper(...d.points))
+	.on('mousedown', handleMouseDown).on('mouseup', handleMouseUp)
+	.on('click', handleControllerAction);
+
+	// add button texts from config
+	controller.selectAll('text.controller').data(controllerButtons)
+	.enter().append('text').classed('controller', true)
+	.attr("dominant-baseline", "middle")
+	.attr("text-anchor", "middle")
+	.style('font-size', 20)
+	.style('fill', 'white')
+	.attr('x', d => eval(d.c.x)).attr('y', d => eval(d.c.y))
+	.text(d => d.label);
+
+	// add center dynamic text
+	controller.append('text').classed('center', true)
+	.attr("dominant-baseline", "middle")
+	.attr("text-anchor", "middle")
+	.style('font-size', controlRadius/2)
+	.style('fill', 'white')
+	.attr('x', 0).attr('y', 0);
+
+	// render default controller setting
+	changeCurrentNode();
+
+
+	// set local coordinate of chart layer
+	chart = layer['chart'].append('g').classed('chart', true)
 	.attr('transform', 'translate('+(width-offset-chartWidth*resizeFactor)+','+(height-offset-chartHeight*resizeFactor/2)+')')
 	.style('opacity', resizeFactor)
 	.on('mouseover', function(d){
@@ -317,41 +369,7 @@ function init(){
 		renderChart();
 	});
 
-	// TODO: fix button click on text
-
-	controller.append('circle')
-	.attr("cx", 0).attr("cy", 0)
-	.attr("r", controlRadius)
-	.style('fill', 'grey')
-	.on('click', () => changeCurrentNode());
-
-	controller.selectAll('polygon.controller').data(controllerButtons)
-	.enter().append('polygon').classed('controller', true)
-	.attr('name', d => d.name).style('fill', d => d.color)
-	.attr('points', d => triangleHelper(...d.points))
-	.on('mousedown', handleMouseDown).on('mouseup', handleMouseUp)
-	.on('click', handleControllerAction);
-
-	controller.selectAll('text.controller').data(controllerButtons)
-	.enter().append('text').classed('controller', true)
-	.attr("dominant-baseline", "middle")
-	.attr("text-anchor", "middle")
-	.style('font-size', 20)
-	.style('fill', 'white')
-	.attr('x', d => eval(d.c.x)).attr('y', d => eval(d.c.y))
-	.text(d => d.label);
-
-
-	controller.append('text').classed('center', true)
-	.attr("dominant-baseline", "middle")
-	.attr("text-anchor", "middle")
-	.style('font-size', controlRadius/2)
-	.style('fill', 'white')
-	.attr('x', 0).attr('y', 0);
-
-	changeCurrentNode();
-
-
+	// add const elements of chart
 	chart.append('rect').classed('chart', true)
 	.attr('x', 0).attr('y', 0).attr('height', 0).attr('width', 0)
 	.style('fill', 'grey').style('opacity', 0.5);
@@ -359,10 +377,12 @@ function init(){
 	.attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 0)
 	.style('stroke', 'black');
 
+	// inital data with defaults before rendering
 	values = [];
-
 	mapping = [];
 
+	// calculate chart's bar width before rendering
+	barWidth = chartWidth/(limit+2);
 	renderChart();
 }
 
