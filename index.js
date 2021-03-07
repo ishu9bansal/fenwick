@@ -7,6 +7,10 @@ const quick = 200;
 const layers = 3;
 const chartHeight = 300;
 const chartWidth = 400;
+const controlHeight = 70;
+const controlGap = 30;
+const controlRadius = 50;
+const controlOpacity = 0.5;
 var motion = false;
 var resizeFactor;
 var chart;
@@ -91,9 +95,9 @@ function transitionAnimation(){
 	.attr('dx', 0).attr('dy', 0)
 	.style('fill', 'black')
 	.style('opacity', 0)
-	.text(d => d.id + '->' + d.data.value)
+	.text(d => d.id + ' -> ' + d.data.value)
 	.transition().duration(period)
-	.style('opacity', 1);
+	.style('opacity', 1);	// change it to 0 to hide texts
 
 	// group and lines transition
 	layer[1].selectAll('g.node')
@@ -177,6 +181,10 @@ function renderChart(){
 
 }
 
+function triangleHelper(pa,pb,pc){
+	return pa[0]+','+pa[1]+' '+pb[0]+','+pb[1]+' '+pc[0]+','+pc[1];
+}
+
 function init(){
 	resizeFactor = 0.5;
 	limit = 1<<treeHeight;
@@ -185,10 +193,6 @@ function init(){
 
 	svg = d3.select("svg").attr("width", width).attr("height", height)
 	.attr("x", offset).attr("y", offset);
-	svg.append('rect').attr("width", 100).attr("height", 100)
-	.attr("x", offset).attr("y", offset)
-	.style('fill', 'lightcyan')
-	.on('click', randomAdd);
 
 	layer = [];
 	for(var i = 0; i < layers; i++){
@@ -196,6 +200,9 @@ function init(){
 	}
 
 	barWidth = chartWidth/(limit+2);
+	controller = layer[2].append('g').classed('control', true)
+	.attr('transform', 'translate('+(offset+controlHeight+controlGap+controlRadius)+','+(offset+controlHeight+controlGap+controlRadius)+')')
+	.style('opacity', controlOpacity);
 	chart = layer[2].append('g').classed('chart', true)
 	.attr('transform', 'translate('+(width-offset-chartWidth*resizeFactor)+','+(height-offset-chartHeight*resizeFactor/2)+')')
 	.style('opacity', resizeFactor)
@@ -210,6 +217,48 @@ function init(){
 		resizeFactor = 0.5;
 		renderChart();
 	});
+
+	controller.append('circle')
+	.attr("cx", 0).attr("cy", 0)
+	.attr("r", controlRadius)
+	.style('fill', 'grey')
+	.on('click', randomAdd);
+	controller.append('polygon').classed('down', true)
+	.style('fill', 'pink')
+	.attr('points',
+		triangleHelper(
+			[-controlRadius, controlRadius+controlGap],
+			[controlRadius, controlRadius+controlGap],
+			[0, controlRadius+controlGap+controlHeight]
+		)
+	);
+	controller.append('polygon').classed('up', true)
+	.style('fill', 'aqua')
+	.attr('points',
+		triangleHelper(
+			[-controlRadius, -controlRadius-controlGap],
+			[controlRadius, -controlRadius-controlGap],
+			[0, -controlRadius-controlGap-controlHeight]
+		)
+	);
+	controller.append('polygon').classed('left', true)
+	.style('fill', 'grey')
+	.attr('points',
+		triangleHelper(
+			[-controlRadius-controlGap, -controlRadius],
+			[-controlRadius-controlGap, controlRadius],
+			[-controlRadius-controlGap-controlHeight, 0]
+		)
+	);
+	controller.append('polygon').classed('right', true)
+	.style('fill', 'grey')
+	.attr('points',
+		triangleHelper(
+			[controlRadius+controlGap, -controlRadius],
+			[controlRadius+controlGap, controlRadius],
+			[controlRadius+controlGap+controlHeight, 0]
+		)
+	);
 
 	chart.append('rect').classed('chart', true)
 	.attr('x', 0).attr('y', 0).attr('height', 0).attr('width', 0)
