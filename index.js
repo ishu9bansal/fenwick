@@ -11,6 +11,7 @@ const controlHeight = 70;
 const controlGap = 30;
 const controlRadius = 50;
 const controlOpacity = 0.5;
+
 var motion = false;
 var resizeFactor;
 var chart;
@@ -24,6 +25,8 @@ var layer;
 var values;
 var barWidth;
 var barHeight;
+var currentNode;
+var controller;
 
 function set(i,x){
 	if(i>limit||i<=0)	return;
@@ -146,6 +149,35 @@ function randomAdd(){
 	set(i,x);
 }
 
+function handleMouseDown(d,i){
+	if(this.getAttribute('class').split(' ').includes('left')&&currentNode==1)	return;
+	if(this.getAttribute('class').split(' ').includes('right')&&currentNode==limit)	return;
+	d3.select(this)
+    .transition().ease(d3.easeElastic)
+    .style("opacity", 0.1);
+}
+
+function handleMouseUp(d,i){
+	d3.select(this)
+    .transition().ease(d3.easeElastic)
+    .style("opacity", 1);
+}
+
+function ordinalSuffix(i){
+	var t = i%100;
+	if([11,12,13].includes(t))	t = 0;
+	t = t%10>3?0:t%10;
+	return ['th','st','nd','rd'][t]
+}
+
+function changeCurrentNode(delta){
+	if(!currentNode||!delta)	currentNode = 1 + Math.floor(32*Math.random());
+	else	currentNode = currentNode + delta;
+	currentNode = Math.max(1, Math.min(limit, currentNode));
+	var temp = currentNode+ordinalSuffix(currentNode);
+	controller.select('text.center').text(temp);
+}
+
 function renderChart(){
 	maxValue = 0;
 	values.forEach(d => maxValue = Math.max(maxValue, Math.abs(d.value)));
@@ -225,6 +257,8 @@ function init(){
 	.on('click', randomAdd);
 	controller.append('polygon').classed('down', true)
 	.style('fill', 'pink')
+	.on('mousedown', handleMouseDown)
+	.on('mouseup', handleMouseUp)
 	.attr('points',
 		triangleHelper(
 			[-controlRadius, controlRadius+controlGap],
@@ -234,6 +268,8 @@ function init(){
 	);
 	controller.append('polygon').classed('up', true)
 	.style('fill', 'aqua')
+	.on('mousedown', handleMouseDown)
+	.on('mouseup', handleMouseUp)
 	.attr('points',
 		triangleHelper(
 			[-controlRadius, -controlRadius-controlGap],
@@ -243,6 +279,9 @@ function init(){
 	);
 	controller.append('polygon').classed('left', true)
 	.style('fill', 'grey')
+	.on('mousedown', handleMouseDown)
+	.on('mouseup', handleMouseUp)
+	.on('click', () => changeCurrentNode(-1))
 	.attr('points',
 		triangleHelper(
 			[-controlRadius-controlGap, -controlRadius],
@@ -252,6 +291,9 @@ function init(){
 	);
 	controller.append('polygon').classed('right', true)
 	.style('fill', 'grey')
+	.on('mousedown', handleMouseDown)
+	.on('mouseup', handleMouseUp)
+	.on('click', () => changeCurrentNode(1))
 	.attr('points',
 		triangleHelper(
 			[controlRadius+controlGap, -controlRadius],
@@ -259,6 +301,16 @@ function init(){
 			[controlRadius+controlGap+controlHeight, 0]
 		)
 	);
+
+	controller.append('text').classed('center', true)
+	.attr("dominant-baseline", "middle")
+	.attr("text-anchor", "middle")
+	.style('font-size', controlRadius/2)
+	.style('fill', 'white')
+	.attr('x', 0).attr('y', 0);
+
+	changeCurrentNode();
+
 
 	chart.append('rect').classed('chart', true)
 	.attr('x', 0).attr('y', 0).attr('height', 0).attr('width', 0)
