@@ -12,6 +12,69 @@ const controlGap = 30;
 const controlRadius = 50;
 const controlOpacity = 0.5;
 
+const controllerButtons = [
+	{
+		name: 'left',
+		action: () => changeCurrentNode(-1),
+		points: [
+			["-controlRadius-controlGap", "-controlRadius"],
+			["-controlRadius-controlGap", "controlRadius"],
+			["-controlRadius-controlGap-controlHeight", "0"]
+		],
+		c: {
+			x: "10-controlRadius-controlGap-controlHeight/2",
+			y: "0"
+		},
+		color: 'grey',
+		label: 'left'
+	},
+	{
+		name: 'right',
+		action: () => changeCurrentNode(1),
+		points: [
+			["controlRadius+controlGap", "-controlRadius"],
+			["controlRadius+controlGap", "controlRadius"],
+			["controlRadius+controlGap+controlHeight", "0"]
+		],
+		c: {
+			x: "-5+controlRadius+controlGap+controlHeight/2",
+			y: "0"
+		},
+		color: 'grey',
+		label: 'right'
+	},
+	{
+		name: 'up',
+		action: () => set(currentNode, 1),
+		points: [
+			["-controlRadius", "-controlRadius-controlGap"],
+			["controlRadius", "-controlRadius-controlGap"],
+			["0", "-controlRadius-controlGap-controlHeight"]
+		],
+		c: {
+			y: "10-controlRadius-controlGap-controlHeight/2",
+			x: "0"
+		},
+		color: 'aqua',
+		label: '+1'
+	},
+	{
+		name: 'down',
+		action: () => set(currentNode, -1),
+		points: [
+			["-controlRadius", "controlRadius+controlGap"],
+			["controlRadius", "controlRadius+controlGap"],
+			["0", "controlRadius+controlGap+controlHeight"]
+		],
+		c: {
+			y: "-10+controlRadius+controlGap+controlHeight/2",
+			x: "0"
+		},
+		color: 'pink',
+		label: '-1'
+	}
+];
+
 var motion = false;
 var resizeFactor;
 var chart;
@@ -150,17 +213,21 @@ function randomAdd(){
 }
 
 function handleMouseDown(d,i){
-	if(this.getAttribute('class').split(' ').includes('left')&&currentNode==1)	return;
-	if(this.getAttribute('class').split(' ').includes('right')&&currentNode==limit)	return;
+	if(this.getAttribute('name')=='left'&&currentNode==1)	return;
+	if(this.getAttribute('name')=='right'&&currentNode==limit)	return;
 	d3.select(this)
     .transition().ease(d3.easeElastic)
-    .style("opacity", 0.1);
+    .style("opacity", 0.3);
 }
 
 function handleMouseUp(d,i){
 	d3.select(this)
     .transition().ease(d3.easeElastic)
     .style("opacity", 1);
+}
+
+function handleControllerAction(d,i){
+	d.action();
 }
 
 function ordinalSuffix(i){
@@ -214,7 +281,7 @@ function renderChart(){
 }
 
 function triangleHelper(pa,pb,pc){
-	return pa[0]+','+pa[1]+' '+pb[0]+','+pb[1]+' '+pc[0]+','+pc[1];
+	return eval(pa[0])+','+eval(pa[1])+' '+eval(pb[0])+','+eval(pb[1])+' '+eval(pc[0])+','+eval(pc[1]);
 }
 
 function init(){
@@ -250,57 +317,30 @@ function init(){
 		renderChart();
 	});
 
+	// TODO: fix button click on text
+
 	controller.append('circle')
 	.attr("cx", 0).attr("cy", 0)
 	.attr("r", controlRadius)
 	.style('fill', 'grey')
-	.on('click', randomAdd);
-	controller.append('polygon').classed('down', true)
-	.style('fill', 'pink')
-	.on('mousedown', handleMouseDown)
-	.on('mouseup', handleMouseUp)
-	.attr('points',
-		triangleHelper(
-			[-controlRadius, controlRadius+controlGap],
-			[controlRadius, controlRadius+controlGap],
-			[0, controlRadius+controlGap+controlHeight]
-		)
-	);
-	controller.append('polygon').classed('up', true)
-	.style('fill', 'aqua')
-	.on('mousedown', handleMouseDown)
-	.on('mouseup', handleMouseUp)
-	.attr('points',
-		triangleHelper(
-			[-controlRadius, -controlRadius-controlGap],
-			[controlRadius, -controlRadius-controlGap],
-			[0, -controlRadius-controlGap-controlHeight]
-		)
-	);
-	controller.append('polygon').classed('left', true)
-	.style('fill', 'grey')
-	.on('mousedown', handleMouseDown)
-	.on('mouseup', handleMouseUp)
-	.on('click', () => changeCurrentNode(-1))
-	.attr('points',
-		triangleHelper(
-			[-controlRadius-controlGap, -controlRadius],
-			[-controlRadius-controlGap, controlRadius],
-			[-controlRadius-controlGap-controlHeight, 0]
-		)
-	);
-	controller.append('polygon').classed('right', true)
-	.style('fill', 'grey')
-	.on('mousedown', handleMouseDown)
-	.on('mouseup', handleMouseUp)
-	.on('click', () => changeCurrentNode(1))
-	.attr('points',
-		triangleHelper(
-			[controlRadius+controlGap, -controlRadius],
-			[controlRadius+controlGap, controlRadius],
-			[controlRadius+controlGap+controlHeight, 0]
-		)
-	);
+	.on('click', () => changeCurrentNode());
+
+	controller.selectAll('polygon.controller').data(controllerButtons)
+	.enter().append('polygon').classed('controller', true)
+	.attr('name', d => d.name).style('fill', d => d.color)
+	.attr('points', d => triangleHelper(...d.points))
+	.on('mousedown', handleMouseDown).on('mouseup', handleMouseUp)
+	.on('click', handleControllerAction);
+
+	controller.selectAll('text.controller').data(controllerButtons)
+	.enter().append('text').classed('controller', true)
+	.attr("dominant-baseline", "middle")
+	.attr("text-anchor", "middle")
+	.style('font-size', 20)
+	.style('fill', 'white')
+	.attr('x', d => eval(d.c.x)).attr('y', d => eval(d.c.y))
+	.text(d => d.label);
+
 
 	controller.append('text').classed('center', true)
 	.attr("dominant-baseline", "middle")
