@@ -216,6 +216,20 @@ function highlight(arr){
 	.transition().duration(quick)
 	.style('fill', 'black');
 
+	layer['nodes'].selectAll('text.binary')
+	.filter(d => arr.includes(d.id))
+	.transition().duration(quick)
+	.style('fill', 'black')
+	.transition().duration(quick)
+	.style('fill', 'lightgrey');
+
+	layer['nodes'].selectAll('text.index')
+	.filter(d => arr.includes(d.id))
+	.transition().duration(quick)
+	.style('fill', 'black')
+	.transition().duration(quick)
+	.style('fill', 'lightgrey');
+
 	layer['nodes'].selectAll('rect.node')
 	.filter(d => arr.includes(d.id))
 	.transition().duration(quick)
