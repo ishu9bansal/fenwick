@@ -1,7 +1,7 @@
 const offset = 10;
 const treeHeight = 5;
 const boxHeight = 20;
-const boxWidth = 50;
+const boxWidth = 30;
 const period = 1000;
 const quick = 200;
 const layers = [
@@ -166,7 +166,23 @@ function transitionAnimation(){
 	.attr('dx', 0).attr('dy', 0)
 	.style('fill', 'black')
 	.style('opacity', 0)
-	.text(d => d.id + ' -> ' + d.data.value)
+	.text(d => d.data.value)
+	.transition().duration(period)
+	.style('opacity', 1);	// change it to 0 to hide texts
+
+	enter_group.append('text').classed('binary', true)
+	.attr('dx', boxWidth/2).attr('dy', boxHeight/2)
+	.style('fill', 'lightgrey')
+	.style('opacity', 0)
+	.text(d => d.data.id.toString(2))
+	.transition().duration(period)
+	.style('opacity', 1);	// change it to 0 to hide texts
+
+	enter_group.append('text').classed('index', true)
+	.attr('dx', -boxWidth/2).attr('dy', -boxHeight/2)
+	.style('fill', 'lightgrey')
+	.style('opacity', 0)
+	.text(d => ordinal(d.data.id))
 	.transition().duration(period)
 	.style('opacity', 1);	// change it to 0 to hide texts
 
@@ -175,7 +191,11 @@ function transitionAnimation(){
 	.transition().duration(period)
 	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
 	layer['nodes'].selectAll('text.node')
-	.text(d => d.id + '->' + d.data.value);
+	.text(d => d.data.value);
+	layer['nodes'].selectAll('text.binary')
+	.text(d => d.data.id.toString(2));
+	layer['nodes'].selectAll('text.index')
+	.text(d => ordinal(d.data.id));
 	layer['lines'].selectAll('line.link')
 	.transition().duration(period)
 	.attr('x1', d => d.source.x + boxWidth)
@@ -241,6 +261,10 @@ function ordinalSuffix(i){
 	if([11,12,13].includes(t))	t = 0;
 	t = t%10>3?0:t%10;
 	return ['th','st','nd','rd'][t]
+}
+
+function ordinal(i){
+	return i+ordinalSuffix(i);
 }
 
 function changeCurrentNode(delta){
