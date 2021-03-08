@@ -280,9 +280,9 @@ function renderChart(){
 	values.forEach(d => maxValue = Math.max(maxValue, Math.abs(d.value)));
 	barHeight = (chartHeight/2-barWidth)/(maxValue||1);
 
-	chart
-	.transition().duration(quick).style('opacity', resizeFactor).on('start', () => motion = true).on('end', () => motion = false)
-	.attr('transform', 'translate('+(width-offset-chartWidth*resizeFactor)+','+(height-offset-chartHeight*resizeFactor/2)+')');
+	chart.transition().duration(quick).style('opacity', resizeFactor)
+	.on('start', () => motion = true).on('end', () => motion = false)
+	.attr('transform', 'translate('+(offset)+','+(offset+chartHeight*resizeFactor/2)+')');
 	chart.select('rect.chart').transition().duration(quick)
 	.attr('x', 0).attr('y', -chartHeight*resizeFactor/2)
 	.attr('height', chartHeight*resizeFactor)
@@ -335,7 +335,7 @@ function init(){
 
 	// set local coordinate of controller layer
 	controller = layer['controller'].append('g').classed('control', true)
-	.attr('transform', 'translate('+(offset+controlHeight+controlGap+controlRadius)+','+(offset+controlHeight+controlGap+controlRadius)+')')
+	.attr('transform', 'translate('+(width-offset-controlHeight-controlGap-controlRadius)+','+(height-offset-controlHeight-controlGap-controlRadius)+')')
 	.style('opacity', controlOpacity);
 
 	// TODO: fix button click on text
@@ -379,8 +379,8 @@ function init(){
 
 	// set local coordinate of chart layer
 	chart = layer['chart'].append('g').classed('chart', true)
-	.attr('transform', 'translate('+(width-offset-chartWidth*resizeFactor)+','+(height-offset-chartHeight*resizeFactor/2)+')')
-	.style('opacity', resizeFactor)
+	// .attr('transform', 'translate('+(offset)+','+(offset+chartHeight*resizeFactor/2)+')')
+	// .style('opacity', resizeFactor)
 	.on('mouseover', function(d){
 		if(resizeFactor==1||motion)	return;
 		resizeFactor = 1;
