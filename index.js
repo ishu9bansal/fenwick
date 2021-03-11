@@ -118,7 +118,7 @@ function set(i,x){
 		i = p;			
 	}
 	var trans_period = transitionAnimation();
-	setTimeout(() => highlight(arr), trans_period);
+	highlight(arr);
 	renderChart();
 }
 
@@ -133,11 +133,34 @@ function transitionAnimation(){
 	w = width - 2*boxWidth;
 	d3.tree().size([w,h])(root);
 
+
+	// group and lines transition
+	layer['nodes'].selectAll('g.node')
+	.transition().duration(period)
+	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
+	layer['lines'].selectAll('line.link')
+	.transition().duration(period)
+	.attr('x1', d => d.source.x + boxWidth)
+	.attr('y1', d => d.source.y + boxHeight)
+	.attr('x2', d => d.target.x + boxWidth)
+	.attr('y2', d => d.target.y + boxHeight);
+
 	// lines enter here
 	layer['lines'].selectAll('line.link')
 	.data(root.links(), d => d.target.id)
 	.enter().append('line')
 	.classed('link', true)
+	.style('stroke', 'black')
+	.attr('x1', d => d.target.x + boxWidth)
+	.attr('y1', d => d.target.y + boxHeight)
+	.attr('x2', d => d.target.x + boxWidth)
+	.attr('y2', d => d.target.y + boxHeight)
+	.style('opacity', 0);
+	layer['lines'].selectAll('line.high')
+	.data(root.links(), d => d.target.id)
+	.enter().append('line')
+	.classed('high', true)
+	.style('opacity', 1)
 	.attr('x1', d => d.target.x + boxWidth)
 	.attr('y1', d => d.target.y + boxHeight)
 	.attr('x2', d => d.target.x + boxWidth)
@@ -154,10 +177,7 @@ function transitionAnimation(){
 	enter_group.append('rect').classed('node', true)
 	.style('fill', 'aqua')
 	.attr('x', 0).attr('y', 0)
-	.attr('width', 0).attr('height', 0)
-	.transition().duration(period)
-	.attr('x', -boxWidth/2).attr('y', -boxHeight/2)
-	.attr('width', boxWidth).attr('height', boxHeight);
+	.attr('width', 0).attr('height', 0);
 
 	// text added to group
 	enter_group.append('text').classed('node', true)
@@ -168,7 +188,7 @@ function transitionAnimation(){
 	.style('opacity', 0)
 	.text(d => d.data.value)
 	.transition().duration(period)
-	.style('opacity', 1);	// change it to 0 to hide texts
+	.style('opacity', 0);	// change it to 0 to hide texts
 
 	enter_group.append('text').classed('binary', true)
 	.attr('dx', boxWidth/2).attr('dy', boxHeight/2)
@@ -176,7 +196,7 @@ function transitionAnimation(){
 	.style('opacity', 0)
 	.text(d => d.data.id.toString(2))
 	.transition().duration(period)
-	.style('opacity', 1);	// change it to 0 to hide texts
+	.style('opacity', 0);	// change it to 0 to hide texts
 
 	enter_group.append('text').classed('index', true)
 	.attr('dx', -boxWidth/2).attr('dy', -boxHeight/2)
@@ -184,24 +204,15 @@ function transitionAnimation(){
 	.style('opacity', 0)
 	.text(d => ordinal(d.data.id))
 	.transition().duration(period)
-	.style('opacity', 1);	// change it to 0 to hide texts
+	.style('opacity', 0);	// change it to 0 to hide texts
 
-	// group and lines transition
-	layer['nodes'].selectAll('g.node')
-	.transition().duration(period)
-	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
+	// set texts
 	layer['nodes'].selectAll('text.node')
 	.text(d => d.data.value);
 	layer['nodes'].selectAll('text.binary')
 	.text(d => d.data.id.toString(2));
 	layer['nodes'].selectAll('text.index')
 	.text(d => ordinal(d.data.id));
-	layer['lines'].selectAll('line.link')
-	.transition().duration(period)
-	.attr('x1', d => d.source.x + boxWidth)
-	.attr('y1', d => d.source.y + boxHeight)
-	.attr('x2', d => d.target.x + boxWidth)
-	.attr('y2', d => d.target.y + boxHeight);
 
 	// return the time to animate
 	return enter_group.empty()?0:period;
@@ -211,38 +222,74 @@ function highlight(arr){
 	// TODO: add travelling highlight
 	layer['nodes'].selectAll('text.node')
 	.filter(d => arr.includes(d.id))
-	.transition().duration(quick)
+	.transition().delay(d => d.height*(period+quick))
+	.duration(quick)
+	.on('start', function(){
+		d3.select(this).style('opacity', 1);
+	})
 	.style('fill', 'white')
-	.transition().duration(quick)
+	.transition().duration(period)
 	.style('fill', 'black');
 
 	layer['nodes'].selectAll('text.binary')
 	.filter(d => arr.includes(d.id))
-	.transition().duration(quick)
+	.transition().delay(d => d.height*(period+quick))
+	.duration(quick)
+	.on('start', function(){
+		d3.select(this).style('opacity', 1);
+	})
 	.style('fill', 'black')
-	.transition().duration(quick)
+	.transition().duration(period)
 	.style('fill', 'lightgrey');
 
 	layer['nodes'].selectAll('text.index')
 	.filter(d => arr.includes(d.id))
-	.transition().duration(quick)
+	.transition().delay(d => d.height*(period+quick))
+	.duration(quick)
+	.on('start', function(){
+		d3.select(this).style('opacity', 1);
+	})
 	.style('fill', 'black')
-	.transition().duration(quick)
+	.transition().duration(period)
 	.style('fill', 'lightgrey');
 
 	layer['nodes'].selectAll('rect.node')
 	.filter(d => arr.includes(d.id))
-	.transition().duration(quick)
+	.transition().delay(d => d.height*(period+quick))
+	.duration(quick)
 	.style('fill', 'black')
-	.transition().duration(quick)
+	.attr('x', -boxWidth/2).attr('y', -boxHeight/2)
+	.attr('width', boxWidth).attr('height', boxHeight)
+	.transition().duration(period)
 	.style('fill', 'aqua');
+
+	layer['lines'].selectAll('line.high')
+	.filter(d => arr.includes(d.target.id))
+	.transition().delay(d => d.target.height*(period+quick))
+	.duration(quick)
+	.attr('x1', d => d.target.x + boxWidth)
+	.attr('y1', d => d.target.y + boxHeight)
+	.attr('x2', d => d.target.x + boxWidth)
+	.attr('y2', d => d.target.y + boxHeight)
+	.transition().duration(period)
+	.attr('x1', d => d.source.x + boxWidth)
+	.attr('y1', d => d.source.y + boxHeight)
+	.attr('x2', d => d.target.x + boxWidth)
+	.attr('y2', d => d.target.y + boxHeight)
+	.duration(quick)
+	.attr('x1', d => d.source.x + boxWidth)
+	.attr('y1', d => d.source.y + boxHeight)
+	.attr('x2', d => d.source.x + boxWidth)
+	.attr('y2', d => d.source.y + boxHeight);
 
 	layer['lines'].selectAll('line.link')
 	.filter(d => arr.includes(d.target.id))
-	.transition().duration(quick)
-	.style('stroke', 'cyan')
-	.transition().duration(quick)
-	.style('stroke', 'black')
+	.transition().delay(d => d.target.height*(period+quick) + quick)
+	.duration(period)
+	.style('opacity', 0)
+	.on('end', function(){
+		d3.select(this).style('opacity', 1);
+	});
 }
 
 function randomAdd(){
