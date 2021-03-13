@@ -329,8 +329,10 @@ function handleControllerAction(d,i){
 	d.action();
 }
 
-function handleMouseOver(d){
-	var i = d.id;
+function handleMouseOver(z){
+	var i = z;
+	chart.selectAll('rect.picker')
+	.style('opacity', d => d<=z?0.5:0);
 	var arr = [];
 	while(i>0){
 		arr.push(i.toString());
@@ -341,8 +343,10 @@ function handleMouseOver(d){
 	.style('fill', 'pink');
 }
 
-function handleMouseOut(d){
-	var i = d.id;
+function handleMouseOut(z){
+	var i = z;
+	chart.selectAll('rect.picker')
+	.style('opacity', 0);
 	var arr = [];
 	while(i>0){
 		arr.push(i.toString());
@@ -373,10 +377,13 @@ function changeCurrentNode(delta){
 }
 
 function renderChart(){
-	maxValue = 0;
+	// recalculate barHeight based on new max
+	var maxValue = 0;
 	values.forEach(d => maxValue = Math.max(maxValue, Math.abs(d.value)));
-	barHeight = (chartHeight/2-barWidth)/(maxValue||1);
+	maxValue = maxValue||1;
+	barHeight = (chartHeight/2-barWidth)/maxValue;
 
+	// zoom chart
 	chart.transition().duration(quick).style('opacity', resizeFactor())
 	.on('start', () => motion = true).on('end', () => motion = false)
 	.attr('transform', 'translate('+(offset)+','+(offset+chartHeight*resizeFactor()/2)+')');
@@ -387,7 +394,13 @@ function renderChart(){
 	chart.select('line.chart').transition().duration(quick)
 	.attr('x1', barWidth*resizeFactor()).attr('y1', 0)
 	.attr('x2', (chartWidth-barWidth)*resizeFactor()).attr('y2', 0);
+	chart.selectAll('rect.picker').transition().duration(quick)
+	.attr('x', d => d*barWidth*resizeFactor())
+	.attr('y', -maxValue*barHeight*resizeFactor())
+	.attr('height', 2*maxValue*barHeight*resizeFactor())
+	.attr('width', barWidth*resizeFactor());
 
+	// add new bars
 	chart.selectAll('rect.bar')
 	.data(values, d => d.id)
 	.enter().append('rect')
@@ -395,10 +408,9 @@ function renderChart(){
 	.attr('x', d => d.id*barWidth*resizeFactor())
 	.attr('y', 0).attr('height', 0)
 	.attr('width', barWidth*resizeFactor())
-	.on('mouseover', handleMouseOver)
-	.on('mouseout', handleMouseOut)
 	.style('fill', d => d.value>0?'cyan':'pink');
 
+	// add new text label
 	chart.selectAll('text.label')
 	.data(values, d => d.id)
 	.enter().append('text')
@@ -407,6 +419,7 @@ function renderChart(){
 	.attr('x', d => (d.id+0.5)*barWidth*chartSizeOpen)
 	.attr('y', 0).style('opacity', 0);
 
+	// change bar height
 	chart.selectAll('rect.bar')
 	.transition().duration(quick)
 	.attr('x', d => d.id*barWidth*resizeFactor())
@@ -415,12 +428,11 @@ function renderChart(){
 	.attr('width', barWidth*resizeFactor())
 	.style('fill', d => d.value>0?'cyan':'pink');
 
+	// change label
 	chart.selectAll('text.label')
 	.text(d => d.value)
+	.style('opacity', 0)
 	.transition().duration(quick)
-	.on('start', function(){
-		d3.select(this).style('opacity', 0);
-	})
 	.on('end', function(){
 		d3.select(this).style('opacity', viewChart?1:0);
 	})
@@ -514,6 +526,18 @@ function init(){
 	chart.append('rect').classed('chart', true)
 	.attr('x', 0).attr('y', 0).attr('height', 0).attr('width', 0)
 	.style('fill', 'grey').style('opacity', 0.5);
+	var pickerData = [];
+	for(var i=0; i<limit; i++){
+		pickerData.push(i+1);
+	}
+	chart.append('g').classed('picker', true)
+	.selectAll('rect.picker')
+	.data(pickerData, d => d).enter()
+	.append('rect').classed('picker', true)
+	.on('mouseover', handleMouseOver)
+	.on('mouseout', handleMouseOut)
+	.attr('x', 0).attr('y', 0).attr('height', 0).attr('width', 0)
+	.style('fill', 'grey').style('opacity', 0);
 	chart.append('line').classed('chart', true)
 	.attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 0)
 	.style('stroke', 'black');
