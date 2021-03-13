@@ -16,6 +16,7 @@ const controlHeight = 70;
 const controlGap = 30;
 const controlRadius = 50;
 const controlOpacity = 0.5;
+const resizeFactor = () => viewChart?1:0.5;
 
 const controllerButtons = [
 	{
@@ -80,8 +81,8 @@ const controllerButtons = [
 	}
 ];
 
+var viewChart = false;
 var motion = false;
-var resizeFactor;
 var chart;
 var limit;
 var mapping;
@@ -374,34 +375,41 @@ function renderChart(){
 	values.forEach(d => maxValue = Math.max(maxValue, Math.abs(d.value)));
 	barHeight = (chartHeight/2-barWidth)/(maxValue||1);
 
-	chart.transition().duration(quick).style('opacity', resizeFactor)
+	chart.transition().duration(quick).style('opacity', resizeFactor())
 	.on('start', () => motion = true).on('end', () => motion = false)
-	.attr('transform', 'translate('+(offset)+','+(offset+chartHeight*resizeFactor/2)+')');
+	.attr('transform', 'translate('+(offset)+','+(offset+chartHeight*resizeFactor()/2)+')');
 	chart.select('rect.chart').transition().duration(quick)
-	.attr('x', 0).attr('y', -chartHeight*resizeFactor/2)
-	.attr('height', chartHeight*resizeFactor)
-	.attr('width', chartWidth*resizeFactor);
+	.attr('x', 0).attr('y', -chartHeight*resizeFactor()/2)
+	.attr('height', chartHeight*resizeFactor())
+	.attr('width', chartWidth*resizeFactor());
 	chart.select('line.chart').transition().duration(quick)
-	.attr('x1', barWidth*resizeFactor).attr('y1', 0)
-	.attr('x2', (chartWidth-barWidth)*resizeFactor).attr('y2', 0);
+	.attr('x1', barWidth*resizeFactor()).attr('y1', 0)
+	.attr('x2', (chartWidth-barWidth)*resizeFactor()).attr('y2', 0);
 
 	chart.selectAll('rect.bar')
 	.data(values, d => d.id)
 	.enter().append('rect')
 	.classed('bar', true)
-	.attr('x', d => d.id*barWidth*resizeFactor)
+	.attr('x', d => d.id*barWidth*resizeFactor())
 	.attr('y', 0).attr('height', 0)
-	.attr('width', barWidth*resizeFactor)
+	.attr('width', barWidth*resizeFactor())
 	.on('mouseover', handleMouseOver)
 	.on('mouseout', handleMouseOut)
 	.style('fill', d => d.value>0?'cyan':'pink');
 
+	// chart.selectAll('text.label')
+	// .data(values, d => d.id)
+	// .enter().append('text')
+	// .classed('label', true)
+	// .attr('x', d => d.id*barWidth*resizeFactor())
+	// .attr('y', 0).attr('height', 0);
+
 	chart.selectAll('rect.bar')
 	.transition().duration(quick)
-	.attr('x', d => d.id*barWidth*resizeFactor)
-	.attr('y', d => d.value<0?0:-d.value*barHeight*resizeFactor)
-	.attr('height', d => Math.abs(d.value*barHeight*resizeFactor))
-	.attr('width', barWidth*resizeFactor)
+	.attr('x', d => d.id*barWidth*resizeFactor())
+	.attr('y', d => d.value<0?0:-d.value*barHeight*resizeFactor())
+	.attr('height', d => Math.abs(d.value*barHeight*resizeFactor()))
+	.attr('width', barWidth*resizeFactor())
 	.style('fill', d => d.value>0?'cyan':'pink');
 
 }
@@ -412,7 +420,7 @@ function triangleHelper(pa,pb,pc){
 
 function init(){
 	// initial size of the chart preview
-	resizeFactor = 0.5;
+	viewChart = false;
 	// calculate limit based on the tree height const
 	limit = 1<<treeHeight;
 
@@ -475,17 +483,15 @@ function init(){
 
 	// set local coordinate of chart layer
 	chart = layer['chart'].append('g').classed('chart', true)
-	// .attr('transform', 'translate('+(offset)+','+(offset+chartHeight*resizeFactor/2)+')')
-	// .style('opacity', resizeFactor)
 	.on('mouseover', function(d){
-		if(resizeFactor==1||motion)	return;
-		resizeFactor = 1;
+		if(viewChart||motion)	return;
+		viewChart = true;
 		renderChart();
 	})
 	.on('mouseout', function(d){
 		// TODO: correctify quick out bug
-		if(resizeFactor==0.5||motion)	return;
-		resizeFactor = 0.5;
+		if(!viewChart||motion)	return;
+		viewChart = false;
 		renderChart();
 	});
 
