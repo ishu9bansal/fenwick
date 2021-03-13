@@ -320,15 +320,15 @@ function handleMouseDown(d,i){
 	if(this.getAttribute('name')=='left'&&currentNode==1)	return;
 	if(this.getAttribute('name')=='right'&&currentNode==limit)	return;
 	d3.select(this)
-    .transition().ease(d3.easeElastic)
+    .transition()
     .style("opacity", 0.3);
 }
 
 function handleMouseUp(d,i){
 	// TODO: improve animation
 	d3.select(this)
-    .transition().ease(d3.easeElastic)
-    .style("opacity", 1);
+    .transition()
+    .style("opacity", 0.7);
 }
 
 function handleControllerAction(d,i){
@@ -492,30 +492,13 @@ function init(){
 	.attr('transform', 'translate('+(width-offset-controlHeight-controlGap-controlRadius)+','+(height-offset-controlHeight-controlGap-controlRadius)+')')
 	.style('opacity', controlOpacity);
 
-	// TODO: fix button click on text
-
-	// add center cirle to controller
-	controller.append('circle')
-	.attr("cx", 0).attr("cy", 0)
-	.attr("r", controlRadius)
-	.style('fill', 'grey')
-	.on('click', () => changeCurrentNode());
-
-	// add controller buttons from button config const
-	controller.selectAll('polygon.controller').data(controllerButtons)
-	.enter().append('polygon').classed('controller', true)
-	.attr('name', d => d.name).style('fill', d => d.color)
-	.attr('points', d => triangleHelper(...d.points))
-	.on('mousedown', handleMouseDown).on('mouseup', handleMouseUp)
-	.on('click', handleControllerAction);
-
 	// add button texts from config
 	controller.selectAll('text.controller').data(controllerButtons)
 	.enter().append('text').classed('controller', true)
 	.attr("dominant-baseline", "middle")
 	.attr("text-anchor", "middle")
 	.style('font-size', 20)
-	.style('fill', 'white')
+	.style('fill', 'black')
 	.attr('x', d => eval(d.c.x)).attr('y', d => eval(d.c.y))
 	.text(d => d.label);
 
@@ -524,8 +507,25 @@ function init(){
 	.attr("dominant-baseline", "middle")
 	.attr("text-anchor", "middle")
 	.style('font-size', controlRadius/2)
-	.style('fill', 'white')
+	.style('fill', 'black')
 	.attr('x', 0).attr('y', 0);
+
+	// add center cirle to controller
+	controller.append('circle')
+	.attr("cx", 0).attr("cy", 0)
+	.attr("r", controlRadius)
+	.style('fill', 'grey')
+	.style('opacity', 0.7)
+	.on('click', () => changeCurrentNode());
+
+	// add controller buttons from button config const
+	controller.selectAll('polygon.controller').data(controllerButtons)
+	.enter().append('polygon').classed('controller', true)
+	.style('opacity', 0.7)
+	.attr('name', d => d.name).style('fill', d => d.color)
+	.attr('points', d => triangleHelper(...d.points))
+	.on('mousedown', handleMouseDown).on('mouseup', handleMouseUp)
+	.on('click', handleControllerAction);
 
 	// render default controller setting
 	changeCurrentNode();
