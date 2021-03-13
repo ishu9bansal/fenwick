@@ -215,7 +215,7 @@ function transitionAnimation(){
 function highlight(arr){
 	var high_in = quick;
 	var high_out = quick;
-	
+
 	layer['nodes'].selectAll('text.node')
 	.filter(d => arr[d.id])
 	.transition().delay(d => arr[d.id].ind*(high_out+high_in))
@@ -326,6 +326,30 @@ function handleControllerAction(d,i){
 	d.action();
 }
 
+function handleMouseOver(d){
+	var i = d.id;
+	var arr = [];
+	while(i>0){
+		arr.push(i.toString());
+		i -= i&-i;
+	}
+	layer['nodes'].selectAll('rect.node')
+	.filter(d => arr.includes(d.id))
+	.style('fill', 'pink');
+}
+
+function handleMouseOut(d){
+	var i = d.id;
+	var arr = [];
+	while(i>0){
+		arr.push(i.toString());
+		i -= i&-i;
+	}
+	layer['nodes'].selectAll('rect.node')
+	.filter(d => arr.includes(d.id))
+	.style('fill', 'aqua');
+}
+
 function ordinalSuffix(i){
 	var t = i%100;
 	if([11,12,13].includes(t))	t = 0;
@@ -368,6 +392,8 @@ function renderChart(){
 	.attr('x', d => d.id*barWidth*resizeFactor)
 	.attr('y', 0).attr('height', 0)
 	.attr('width', barWidth*resizeFactor)
+	.on('mouseover', handleMouseOver)
+	.on('mouseout', handleMouseOut)
 	.style('fill', d => d.value>0?'cyan':'pink');
 
 	chart.selectAll('rect.bar')
