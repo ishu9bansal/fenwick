@@ -344,9 +344,18 @@ function handleMouseOver(z){
 		arr.push(i.toString());
 		i -= i&-i;
 	}
+	var chartSum = 0;
+	values.forEach(v => chartSum += v.id<=z?v.value:0);
+	// var nodeSum = 0;
+	// mapping.forEach(m => nodeSum += arr.includes(m.id.toString())?m.value:0);
 	layer['nodes'].selectAll('rect.node')
 	.filter(d => arr.includes(d.id))
 	.style('fill', 'pink');
+	chart.select('text.picker')
+	.style('opacity', 1)
+	.text(chartSum)
+	.attr('y', chartHeight/2)
+	.attr('x', (z+1)*barWidth*chartSizeOpen);
 }
 
 function handleMouseOut(z){
@@ -361,6 +370,8 @@ function handleMouseOut(z){
 	layer['nodes'].selectAll('rect.node')
 	.filter(d => arr.includes(d.id))
 	.style('fill', 'aqua');
+	chart.select('text.picker')
+	.style('opacity', 0);
 }
 
 function ordinalSuffix(i){
@@ -543,6 +554,9 @@ function init(){
 		pickerData.push(i+1);
 	}
 	chart.append('g').classed('picker', true)
+	.call(g => g.append('text').classed('picker', true)
+		.style('text-anchor', 'end').style('fill', 'white')
+	)
 	.selectAll('rect.picker')
 	.data(pickerData, d => d).enter()
 	.append('rect').classed('picker', true)
