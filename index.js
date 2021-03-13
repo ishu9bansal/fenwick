@@ -2,6 +2,7 @@ const offset = 10;
 const treeHeight = 5;
 const boxHeight = 20;
 const boxWidth = 30;
+const setterDelay = 2000;
 const period = 1000;
 const quick = 200;
 const layers = [
@@ -305,9 +306,14 @@ function highlight(arr){
 }
 
 function randomAdd(){
-	i = 1 + Math.floor(32*Math.random());
-	x = -32 + Math.floor(64*Math.random());
+	i = 1 + Math.floor(limit*Math.random());
+	x = -limit + Math.floor(2*limit*Math.random());
 	set(i,x);
+}
+
+function randomSetter(n = 7, delay = setterDelay){
+	for(var i=0; i<n; i++)
+		setTimeout(randomAdd, i*delay);
 }
 
 function handleMouseDown(d,i){
@@ -555,6 +561,7 @@ function init(){
 	// calculate chart's bar width before rendering
 	barWidth = chartWidth/(limit+2);
 	renderChart();
+	setTimeout(randomSetter, setterDelay);
 }
 
 init();
