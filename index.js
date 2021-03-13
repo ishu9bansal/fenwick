@@ -455,7 +455,13 @@ function init(){
 	width = window.innerWidth - 2*offset;
 	height = window.innerHeight - 2*offset;
 
-	svg = d3.select("svg").attr("width", width).attr("height", height)
+	svg = d3.select("svg")
+	.on('click', function(){
+		if(!viewChart||motion)	return;
+		viewChart = false;
+		renderChart();
+	})
+	.attr("width", width).attr("height", height)
 	.attr("x", offset).attr("y", offset);
 
 	// add layers to the svg
