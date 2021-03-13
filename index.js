@@ -104,9 +104,10 @@ function set(i,x){
 		value: 0
 	});
 	temp.value += x;
-	arr = [];
+	var arr = {};
+	var ind = 0
 	while(i<=limit){
-		arr.push(i.toString());
+		arr[i.toString()] = { ind: ind++ };
 		var temp = mapping.find(d => d.id == i);
 		var p = i + (i&-i);
 		if(!temp)	mapping.push(temp = {
@@ -133,26 +134,14 @@ function transitionAnimation(){
 	w = width - 2*boxWidth;
 	d3.tree().size([w,h])(root);
 
-
-	// group and lines transition
-	layer['nodes'].selectAll('g.node')
-	.transition().duration(period)
-	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
-	layer['lines'].selectAll('line.link')
-	.transition().duration(period)
-	.attr('x1', d => d.source.x + boxWidth)
-	.attr('y1', d => d.source.y + boxHeight)
-	.attr('x2', d => d.target.x + boxWidth)
-	.attr('y2', d => d.target.y + boxHeight);
-
 	// lines enter here
 	layer['lines'].selectAll('line.link')
 	.data(root.links(), d => d.target.id)
 	.enter().append('line')
 	.classed('link', true)
 	.style('stroke', 'black')
-	.attr('x1', d => d.target.x + boxWidth)
-	.attr('y1', d => d.target.y + boxHeight)
+	.attr('x1', d => d.source.x + boxWidth)
+	.attr('y1', d => d.source.y + boxHeight)
 	.attr('x2', d => d.target.x + boxWidth)
 	.attr('y2', d => d.target.y + boxHeight)
 	.style('opacity', 0);
@@ -186,110 +175,130 @@ function transitionAnimation(){
 	.attr('dx', 0).attr('dy', 0)
 	.style('fill', 'black')
 	.style('opacity', 0)
-	.text(d => d.data.value)
-	.transition().duration(period)
-	.style('opacity', 0);	// change it to 0 to hide texts
+	.text(d => d.data.value);
 
 	enter_group.append('text').classed('binary', true)
 	.attr('dx', boxWidth/2).attr('dy', boxHeight/2)
 	.style('fill', 'lightgrey')
 	.style('opacity', 0)
-	.text(d => d.data.id.toString(2))
-	.transition().duration(period)
-	.style('opacity', 0);	// change it to 0 to hide texts
+	.text(d => d.data.id.toString(2));
 
 	enter_group.append('text').classed('index', true)
 	.attr('dx', -boxWidth/2).attr('dy', -boxHeight/2)
 	.style('fill', 'lightgrey')
 	.style('opacity', 0)
-	.text(d => ordinal(d.data.id))
-	.transition().duration(period)
-	.style('opacity', 0);	// change it to 0 to hide texts
+	.text(d => ordinal(d.data.id));
 
 	// set texts
-	layer['nodes'].selectAll('text.node')
-	.text(d => d.data.value);
-	layer['nodes'].selectAll('text.binary')
-	.text(d => d.data.id.toString(2));
-	layer['nodes'].selectAll('text.index')
-	.text(d => ordinal(d.data.id));
+	// layer['nodes'].selectAll('text.node')
+	// .text(d => d.data.value);
+	// layer['nodes'].selectAll('text.binary')
+	// .text(d => d.data.id.toString(2));
+	// layer['nodes'].selectAll('text.index')
+	// .text(d => ordinal(d.data.id));
+
+	// group and lines transition
+	layer['nodes'].selectAll('g.node')
+	.transition().duration(period)
+	.attr('transform', d => 'translate('+(d.x+boxWidth)+','+(d.y+boxHeight)+')');
+	layer['lines'].selectAll('line.link')
+	.transition().duration(period)
+	.attr('x1', d => d.source.x + boxWidth)
+	.attr('y1', d => d.source.y + boxHeight)
+	.attr('x2', d => d.target.x + boxWidth)
+	.attr('y2', d => d.target.y + boxHeight);
 
 	// return the time to animate
 	return enter_group.empty()?0:period;
 }
 
 function highlight(arr){
-	// TODO: add travelling highlight
+	var high_in = quick;
+	var high_out = quick;
+	
 	layer['nodes'].selectAll('text.node')
-	.filter(d => arr.includes(d.id))
-	.transition().delay(d => d.height*(period+quick))
-	.duration(quick)
+	.filter(d => arr[d.id])
+	.transition().delay(d => arr[d.id].ind*(high_out+high_in))
+	.duration(high_in)
 	.on('start', function(){
 		d3.select(this).style('opacity', 1);
 	})
+	.on('end', function(){
+		d3.select(this).text(d => d.data.value);
+	})
 	.style('fill', 'white')
-	.transition().duration(period)
+	.transition().duration(high_out)
 	.style('fill', 'black');
 
 	layer['nodes'].selectAll('text.binary')
-	.filter(d => arr.includes(d.id))
-	.transition().delay(d => d.height*(period+quick))
-	.duration(quick)
+	.filter(d => arr[d.id])
+	.transition().delay(d => arr[d.id].ind*(high_out+high_in))
+	.duration(high_in)
 	.on('start', function(){
 		d3.select(this).style('opacity', 1);
 	})
+	.on('end', function(){
+		d3.select(this).text(d => d.data.id.toString(2));
+	})
 	.style('fill', 'black')
-	.transition().duration(period)
+	.transition().duration(high_out)
 	.style('fill', 'lightgrey');
 
 	layer['nodes'].selectAll('text.index')
-	.filter(d => arr.includes(d.id))
-	.transition().delay(d => d.height*(period+quick))
-	.duration(quick)
+	.filter(d => arr[d.id])
+	.transition().delay(d => arr[d.id].ind*(high_out+high_in))
+	.duration(high_in)
 	.on('start', function(){
 		d3.select(this).style('opacity', 1);
 	})
+	.on('end', function(){
+		d3.select(this).text(d => ordinal(d.data.id));
+	})
 	.style('fill', 'black')
-	.transition().duration(period)
+	.transition().duration(high_out)
 	.style('fill', 'lightgrey');
 
 	layer['nodes'].selectAll('rect.node')
-	.filter(d => arr.includes(d.id))
-	.transition().delay(d => d.height*(period+quick))
-	.duration(quick)
+	.filter(d => arr[d.id])
+	.transition().delay(d => arr[d.id].ind*(high_out+high_in))
+	.duration(high_in)
 	.style('fill', 'black')
 	.attr('x', -boxWidth/2).attr('y', -boxHeight/2)
 	.attr('width', boxWidth).attr('height', boxHeight)
-	.transition().duration(period)
+	.transition().duration(high_out)
 	.style('fill', 'aqua');
 
 	layer['lines'].selectAll('line.high')
-	.filter(d => arr.includes(d.target.id))
-	.transition().delay(d => d.target.height*(period+quick))
-	.duration(quick)
+	.filter(d => arr[d.target.id])
+	.transition().delay(d => arr[d.target.id].ind*(high_out+high_in))
+	.duration(high_in)
 	.attr('x1', d => d.target.x + boxWidth)
 	.attr('y1', d => d.target.y + boxHeight)
 	.attr('x2', d => d.target.x + boxWidth)
 	.attr('y2', d => d.target.y + boxHeight)
-	.transition().duration(period)
+	.transition().duration(high_out)
 	.attr('x1', d => d.source.x + boxWidth)
 	.attr('y1', d => d.source.y + boxHeight)
 	.attr('x2', d => d.target.x + boxWidth)
 	.attr('y2', d => d.target.y + boxHeight)
-	.duration(quick)
+	.on('end', function(){
+		var that = this;
+		d3.selectAll('line.link').filter(dd => dd.target.id == d3.select(that).data()[0].target.id).style('opacity', 1);
+	})
+	.transition().duration(high_in)
 	.attr('x1', d => d.source.x + boxWidth)
 	.attr('y1', d => d.source.y + boxHeight)
 	.attr('x2', d => d.source.x + boxWidth)
 	.attr('y2', d => d.source.y + boxHeight);
 
-	layer['lines'].selectAll('line.link')
-	.filter(d => arr.includes(d.target.id))
-	.transition().delay(d => d.target.height*(period+quick) + quick)
-	.duration(period)
-	.style('opacity', 0)
-	.on('end', function(){
-		d3.select(this).style('opacity', 1);
-	});
+	// layer['lines'].selectAll('line.link')
+	// .filter(d => arr[d.target.id])
+	// .transition().delay(d => arr[d.target.id].ind*(high_out+high_in) + high_in)
+	// .duration(high_out)
+	// .style('opacity', 0)
+	// .on('end', function(){
+	// 	d3.select(this).style('opacity', 1);
+	// });
 }
 
 function randomAdd(){
