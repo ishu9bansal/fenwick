@@ -16,7 +16,9 @@ const controlHeight = 70;
 const controlGap = 30;
 const controlRadius = 50;
 const controlOpacity = 0.5;
-const resizeFactor = () => viewChart?1:0.5;
+const chartSizeOpen = 1;
+const chartSizeClose = 0.5;
+const resizeFactor = () => viewChart?chartSizeOpen:chartSizeClose;
 
 const controllerButtons = [
 	{
@@ -397,12 +399,13 @@ function renderChart(){
 	.on('mouseout', handleMouseOut)
 	.style('fill', d => d.value>0?'cyan':'pink');
 
-	// chart.selectAll('text.label')
-	// .data(values, d => d.id)
-	// .enter().append('text')
-	// .classed('label', true)
-	// .attr('x', d => d.id*barWidth*resizeFactor())
-	// .attr('y', 0).attr('height', 0);
+	chart.selectAll('text.label')
+	.data(values, d => d.id)
+	.enter().append('text')
+	.classed('label', true)
+	.attr("text-anchor", "middle")
+	.attr('x', d => (d.id+0.5)*barWidth*chartSizeOpen)
+	.attr('y', 0).style('opacity', 0);
 
 	chart.selectAll('rect.bar')
 	.transition().duration(quick)
@@ -411,6 +414,18 @@ function renderChart(){
 	.attr('height', d => Math.abs(d.value*barHeight*resizeFactor()))
 	.attr('width', barWidth*resizeFactor())
 	.style('fill', d => d.value>0?'cyan':'pink');
+
+	chart.selectAll('text.label')
+	.text(d => d.value)
+	.transition().duration(quick)
+	.on('start', function(){
+		d3.select(this).style('opacity', 0);
+	})
+	.on('end', function(){
+		d3.select(this).style('opacity', viewChart?1:0);
+	})
+	.attr('dominant-baseline', d => d.value>0?'unset':d.value<0?'hanging':'middle')
+	.attr('y', d => -d.value*barHeight*chartSizeOpen);
 
 }
 
